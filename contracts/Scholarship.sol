@@ -89,7 +89,7 @@ contract Scholarship {
         }
     }
 
-    function getExams() public view returns (Exam[] memory) {
-        return exams;
+    function getExamCount() public view returns (uint256 examCount) {
+        return examList.length;
     }
 }
