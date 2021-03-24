@@ -45,7 +45,9 @@ contract Scholarship {
     address[] funders;
     address[] applicants;
     address creator;
-    Exam[] public exams;
+
+    mapping(uint256 => Exam) public exams;
+    Exam[] public examList;
 
     constructor(
         address _creator,
