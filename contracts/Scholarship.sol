@@ -1,6 +1,13 @@
 pragma solidity >=0.4.22 <0.9.0;
 
+struct ExamConfig {
+    string name;
+    uint256 totalMarks;
+    uint256 passMarks;
+}
+
 struct Exam {
+    uint256 id;
     string name;
     uint256 totalMarks;
     uint256 passMarks;
@@ -16,7 +23,7 @@ contract ScholarshipFactory {
         string memory name,
         uint256 maxApplicants,
         uint256 fundingGoal,
-        Exam[] memory exams
+        ExamConfig[] memory examConfigs
     ) public {
         Scholarship scholarship =
             new Scholarship(
@@ -24,7 +31,7 @@ contract ScholarshipFactory {
                 name,
                 maxApplicants,
                 fundingGoal,
-                exams
+                examConfigs
             );
         scholarships.push(scholarship);
         scholarshipCount += 1;
@@ -54,25 +61,31 @@ contract Scholarship {
         string memory _name,
         uint256 _maxApplicants,
         uint256 _fundingGoal,
-        Exam[] memory _exams
+        ExamConfig[] memory _examsConfigs
     ) public {
         name = _name;
         creator = _creator;
         maxApplicants = _maxApplicants;
         fundingGoal = _fundingGoal;
 
-        createExams(_exams);
+        createExams(_examsConfigs);
     }
 
-    function createExams(Exam[] memory _exams) internal {
-        for (uint256 index = 0; index < exams.length; index++) {
+    function createExams(ExamConfig[] memory _examConfigs) internal {
+        for (uint256 index = 0; index < _examConfigs.length; index++) {
+            uint256 examId = examList.length + 1;
             Exam memory exam =
                 Exam({
-                    name: _exams[index].name,
-                    totalMarks: _exams[index].totalMarks,
-                    passMarks: _exams[index].passMarks
+                    id: examId,
+                    name: _examConfigs[index].name,
+                    totalMarks: _examConfigs[index].totalMarks,
+                    passMarks: _examConfigs[index].passMarks
                 });
-            exams.push(exam);
+            exams[examId].id = examId;
+            exams[examId].name = _examConfigs[index].name;
+            exams[examId].totalMarks = _examConfigs[index].totalMarks;
+            exams[examId].passMarks = _examConfigs[index].passMarks;
+            examList.push(exam);
         }
     }
 
