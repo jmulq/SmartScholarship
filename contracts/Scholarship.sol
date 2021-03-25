@@ -44,15 +44,19 @@ contract ScholarshipFactory {
 }
 
 contract Scholarship {
+    address creator;
     string public name;
+
     uint256 public maxApplicants;
+    address[] applicants;
+
     uint256 public fundingGoal;
     uint256 public currentFunding;
     uint256 public numFunders;
-    address[] funders;
-    address[] applicants;
-    address creator;
-
+    mapping(address => bool) funders;
+    bool isFundingComplete;
+    
+    
     mapping(uint256 => Exam) public exams;
     Exam[] public examList;
 
@@ -91,5 +95,27 @@ contract Scholarship {
 
     function getExamCount() public view returns (uint256 examCount) {
         return examList.length;
+    }
+
+    function fundScholarship() public payable {
+        require(!isFundingComplete, "Funding goal has already been reached.");
+        require(msg.value <= (fundingGoal - currentFunding), "Cannot fund more than remaining amount.");
+
+        currentFunding += msg.value;
+        if (!isFunder) {
+            funders[msg.sender] = true;
+            numFunders++;
+        }
+    }
+
+    function isFunder(address funder) internal view returns (bool) {
+        return funders[funder];
+    }
+
+    function isFullyFunded () {
+    }
+
+    function applyForScholarship() {
+        // Create Applicant contract ? 
     }
 }
