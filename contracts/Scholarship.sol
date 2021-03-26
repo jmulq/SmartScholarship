@@ -14,10 +14,10 @@ struct Exam {
 }
 
 contract ScholarshipFactory {
-    event NewScholarship(uint256 scholarshipId, string name);
-
     Scholarship[] public scholarships;
     uint256 public scholarshipCount = 0;
+
+    event NewScholarship(address scholarshipAddress, string name);
 
     function createScholarship(
         string memory name,
@@ -25,17 +25,12 @@ contract ScholarshipFactory {
         uint256 fundingGoal,
         ExamConfig[] memory examConfigs
     ) public {
-        Scholarship scholarship =
-            new Scholarship(
-                msg.sender,
-                name,
-                maxApplicants,
-                fundingGoal,
-                examConfigs
-            );
+        Scholarship scholarship = new Scholarship (
+            msg.sender, name, maxApplicants, fundingGoal, examConfigs
+        );
         scholarships.push(scholarship);
         scholarshipCount += 1;
-        emit NewScholarship(scholarshipCount, name);
+        emit NewScholarship(address(scholarship), name);
     }
 
     function getScholarships() public view returns (Scholarship[] memory) {
@@ -48,13 +43,14 @@ contract Scholarship {
     string public name;
 
     uint256 public maxApplicants;
-    address[] applicants;
+    uint256 public applicantCount;
+    mapping(address => bool) applicants;
 
     uint256 public fundingGoal;
     uint256 public currentFunding;
     uint256 public numFunders;
-    mapping(address => bool) funders;
-    bool isFundingComplete;
+    mapping(address => bool) public funders;
+    bool public isFundingComplete;
     
     
     mapping(uint256 => Exam) public exams;
@@ -102,9 +98,12 @@ contract Scholarship {
         require(msg.value <= (fundingGoal - currentFunding), "Cannot fund more than remaining amount.");
 
         currentFunding += msg.value;
-        if (!isFunder) {
+        if (!isFunder(msg.sender)) {
             funders[msg.sender] = true;
             numFunders++;
+        }
+        if (currentFunding == fundingGoal) {
+            isFundingComplete = true;
         }
     }
 
@@ -112,10 +111,19 @@ contract Scholarship {
         return funders[funder];
     }
 
-    function isFullyFunded () {
+    function applyForScholarship() public {
+        require(!isApplicant(msg.sender), "You have already applied for this Scholarship.");
+        require(canTakeApplicant(), "This Scholarship is taking no more applications.");
+
+        applicants[msg.sender] = true;
+        applicantCount++;
     }
 
-    function applyForScholarship() {
-        // Create Applicant contract ? 
+    function isApplicant(address applicant) internal view returns (bool) {
+        return applicants[applicant];
+    }
+
+    function canTakeApplicant() internal view returns (bool) {
+        return applicantCount < maxApplicants;
     }
 }
