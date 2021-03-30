@@ -6,18 +6,12 @@ struct ExamConfig {
     uint256 passMarks;
 }
 
-struct Exam {
-    uint256 id;
-    string name;
-    uint256 totalMarks;
-    uint256 passMarks;
-}
-
 contract ScholarshipFactory {
     Scholarship[] public scholarships;
     uint256 public scholarshipCount = 0;
 
     event NewScholarship(address scholarshipAddress, string name);
+
 
     function createScholarship(
         string memory name,
@@ -44,17 +38,33 @@ contract Scholarship {
 
     uint256 public maxApplicants;
     uint256 public applicantCount;
-    mapping(address => bool) applicants;
+    mapping(address => Applicant) public applicants;
 
     uint256 public fundingGoal;
     uint256 public currentFunding;
     uint256 public numFunders;
     mapping(address => bool) public funders;
     bool public isFundingComplete;
-    
+
+    struct Exam {
+    uint256 id;
+    string name;
+    uint256 totalMarks;
+    uint256 passMarks;
+    }
+
+    struct ExamRecord {
+        uint256 mark;
+        bool isPass;
+    }
+
+    struct Applicant {
+        mapping(uint256 => ExamRecord) examRecords;
+        bool isApplicant;
+    }    
     
     mapping(uint256 => Exam) public exams;
-    Exam[] public examList;
+    uint256[] public examList;
 
     constructor(
         address _creator,
@@ -74,18 +84,11 @@ contract Scholarship {
     function createExams(ExamConfig[] memory _examConfigs) internal {
         for (uint256 index = 0; index < _examConfigs.length; index++) {
             uint256 examId = examList.length + 1;
-            Exam memory exam =
-                Exam({
-                    id: examId,
-                    name: _examConfigs[index].name,
-                    totalMarks: _examConfigs[index].totalMarks,
-                    passMarks: _examConfigs[index].passMarks
-                });
             exams[examId].id = examId;
             exams[examId].name = _examConfigs[index].name;
             exams[examId].totalMarks = _examConfigs[index].totalMarks;
             exams[examId].passMarks = _examConfigs[index].passMarks;
-            examList.push(exam);
+            examList.push(examId);
         }
     }
 
@@ -111,11 +114,21 @@ contract Scholarship {
         return funders[funder];
     }
 
-    function applyForScholarship() public {
-        require(!isApplicant(msg.sender), "You have already applied for this Scholarship.");
+    function submitApplicantsForScholarship(address[] memory _applicants) public {
+        for (uint256 index = 0; index < _applicants.length; index++) {
+            applyForScholarship(_applicants[index]);
+        }
+    }
+
+    function applyForScholarship(address applicantAddress) public {
+        require(!isApplicant(applicantAddress), "You have already applied for this Scholarship.");
         require(canTakeApplicant(), "This Scholarship is taking no more applications.");
 
-        applicants[msg.sender] = true;
+        applicants[applicantAddress].isApplicant = true;
+        for (uint256 index = 0; index < examList.length; index++) {
+            ExamRecord memory examRecord = ExamRecord(0, false);
+            applicants[applicantAddress].examRecords[examList[index]] = examRecord;
+        }
         applicantCount++;
     }
 
