@@ -132,8 +132,12 @@ contract Scholarship {
         applicantCount++;
     }
 
+    function getApplicantExamRecord(address applicantAddress, uint256 examId) public view returns (ExamRecord memory record) {
+        return applicants[applicantAddress].examRecords[examId];
+    }
+
     function isApplicant(address applicant) internal view returns (bool) {
-        return applicants[applicant];
+        return applicants[applicant].isApplicant;
     }
 
     function canTakeApplicant() internal view returns (bool) {
