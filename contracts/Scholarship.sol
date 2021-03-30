@@ -143,4 +143,13 @@ contract Scholarship {
     function canTakeApplicant() internal view returns (bool) {
         return applicantCount < maxApplicants;
     }
+
+    // Todo - Rework this so can be updated in batch of applicants for an exam
+    function updateApplicantExamRecord(address applicantAddress, uint256 examId, uint256 score) public {
+        require(score <= exams[examId].totalMarks);
+
+        bool isPass = score >= exams[examId].passMarks;
+        ExamRecord memory examRecord = ExamRecord(score, isPass);
+        applicants[applicantAddress].examRecords[examId] = examRecord;
+    }
 }
