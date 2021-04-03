@@ -1,9 +1,12 @@
 pragma solidity >=0.4.22 <0.9.0;
+pragma experimental ABIEncoderV2;
 
-struct ExamConfig {
-    string name;
-    uint256 totalMarks;
-    uint256 passMarks;
+library Shared {
+    struct ExamConfig {
+        string name;
+        uint256 totalMarks;
+        uint256 passMarks;
+    }
 }
 
 contract ScholarshipFactory {
@@ -12,16 +15,13 @@ contract ScholarshipFactory {
 
     event NewScholarship(address scholarshipAddress, string name);
 
-
     function createScholarship(
         string memory name,
         uint256 maxApplicants,
         uint256 fundingGoal,
-        ExamConfig[] memory examConfigs
+        Shared.ExamConfig[] memory examConfigs
     ) public {
-        Scholarship scholarship = new Scholarship (
-            msg.sender, name, maxApplicants, fundingGoal, examConfigs
-        );
+        Scholarship scholarship = new Scholarship(msg.sender, name, maxApplicants, fundingGoal, examConfigs);
         scholarships.push(scholarship);
         scholarshipCount += 1;
         emit NewScholarship(address(scholarship), name);
@@ -47,10 +47,10 @@ contract Scholarship {
     bool public isFundingComplete;
 
     struct Exam {
-    uint256 id;
-    string name;
-    uint256 totalMarks;
-    uint256 passMarks;
+        uint256 id;
+        string name;
+        uint256 totalMarks;
+        uint256 passMarks;
     }
 
     struct ExamRecord {
@@ -61,8 +61,8 @@ contract Scholarship {
     struct Applicant {
         mapping(uint256 => ExamRecord) examRecords;
         bool isApplicant;
-    }    
-    
+    }
+
     mapping(uint256 => Exam) public exams;
     uint256[] public examList;
 
@@ -71,7 +71,7 @@ contract Scholarship {
         string memory _name,
         uint256 _maxApplicants,
         uint256 _fundingGoal,
-        ExamConfig[] memory _examsConfigs
+        Shared.ExamConfig[] memory _examsConfigs
     ) public {
         name = _name;
         creator = _creator;
@@ -81,7 +81,7 @@ contract Scholarship {
         createExams(_examsConfigs);
     }
 
-    function createExams(ExamConfig[] memory _examConfigs) internal {
+    function createExams(Shared.ExamConfig[] memory _examConfigs) internal {
         for (uint256 index = 0; index < _examConfigs.length; index++) {
             uint256 examId = examList.length + 1;
             exams[examId].id = examId;
@@ -97,8 +97,8 @@ contract Scholarship {
     }
 
     function fundScholarship() public payable {
-        require(!isFundingComplete, "Funding goal has already been reached.");
-        require(msg.value <= (fundingGoal - currentFunding), "Cannot fund more than remaining amount.");
+        require(!isFundingComplete, 'Funding goal has already been reached.');
+        require(msg.value <= (fundingGoal - currentFunding), 'Cannot fund more than remaining amount.');
 
         currentFunding += msg.value;
         if (!isFunder(msg.sender)) {
@@ -121,8 +121,8 @@ contract Scholarship {
     }
 
     function applyForScholarship(address applicantAddress) public {
-        require(!isApplicant(applicantAddress), "You have already applied for this Scholarship.");
-        require(canTakeApplicant(), "This Scholarship is taking no more applications.");
+        require(!isApplicant(applicantAddress), 'You have already applied for this Scholarship.');
+        require(canTakeApplicant(), 'This Scholarship is taking no more applications.');
 
         applicants[applicantAddress].isApplicant = true;
         for (uint256 index = 0; index < examList.length; index++) {
@@ -132,7 +132,11 @@ contract Scholarship {
         applicantCount++;
     }
 
-    function getApplicantExamRecord(address applicantAddress, uint256 examId) public view returns (ExamRecord memory record) {
+    function getApplicantExamRecord(address applicantAddress, uint256 examId)
+        public
+        view
+        returns (ExamRecord memory record)
+    {
         return applicants[applicantAddress].examRecords[examId];
     }
 
@@ -145,7 +149,11 @@ contract Scholarship {
     }
 
     // Todo - Rework this so can be updated in batch of applicants for an exam
-    function updateApplicantExamRecord(address applicantAddress, uint256 examId, uint256 score) public {
+    function updateApplicantExamRecord(
+        address applicantAddress,
+        uint256 examId,
+        uint256 score
+    ) public {
         require(score <= exams[examId].totalMarks);
 
         bool isPass = score >= exams[examId].passMarks;
