@@ -1,50 +1,32 @@
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
-library Shared {
-    struct ExamConfig {
+import "./APIConsumer.sol";
+import "./libraries/Shared.sol";
+
+contract Scholarship is APIConsumer {
+    address public admin;
+
+    struct ScholarshipInfo {
+        string scholarshipId;
         string name;
-        uint256 totalMarks;
-        uint256 passMarks;
-    }
-}
-
-contract ScholarshipFactory {
-    Scholarship[] public scholarships;
-    uint256 public scholarshipCount = 0;
-
-    event NewScholarship(address scholarshipAddress, string name);
-
-    function createScholarship(
-        string memory name,
-        uint256 maxApplicants,
-        uint256 fundingGoal,
-        Shared.ExamConfig[] memory examConfigs
-    ) public {
-        Scholarship scholarship = new Scholarship(msg.sender, name, maxApplicants, fundingGoal, examConfigs);
-        scholarships.push(scholarship);
-        scholarshipCount += 1;
-        emit NewScholarship(address(scholarship), name);
+        string description;
+        string targetStudentGroup;
+        string socialImpactOKR;
     }
 
-    function getScholarships() public view returns (Scholarship[] memory) {
-        return scholarships;
-    }
-}
+    ScholarshipInfo public info;
 
-contract Scholarship {
-    address creator;
-    string public name;
-
-    uint256 public maxApplicants;
-    uint256 public applicantCount;
-    mapping(address => Applicant) public applicants;
-
-    uint256 public fundingGoal;
-    uint256 public currentFunding;
-    uint256 public numFunders;
+    uint public maxApplicants;
+    uint public applicantCount = 0;
+    mapping(address => bool) public applicants;
+    bool public canAward = false;
+    
+    uint public fundingGoal;
+    uint public numFunders = 0;
+    uint public currentFunding = 0;
+    bool public isFundingComplete = false;
     mapping(address => bool) public funders;
-    bool public isFundingComplete;
 
     struct Exam {
         uint256 id;
@@ -53,32 +35,24 @@ contract Scholarship {
         uint256 passMarks;
     }
 
-    struct ExamRecord {
-        uint256 mark;
-        bool isPass;
-    }
-
-    struct Applicant {
-        mapping(uint256 => ExamRecord) examRecords;
-        bool isApplicant;
-    }
-
     mapping(uint256 => Exam) public exams;
     uint256[] public examList;
 
     constructor(
-        address _creator,
-        string memory _name,
-        uint256 _maxApplicants,
-        uint256 _fundingGoal,
-        Shared.ExamConfig[] memory _examsConfigs
-    ) public {
-        name = _name;
-        creator = _creator;
-        maxApplicants = _maxApplicants;
-        fundingGoal = _fundingGoal;
-
-        createExams(_examsConfigs);
+        address _admin,
+        Shared.ScholarshipConfig memory _scholarshipConfig,
+        Shared.ExamConfig[] memory _examConfigs
+    ) APIConsumer() public {
+        // Todo refactor into seperate func
+        admin = _admin;
+        info.scholarshipId = _scholarshipConfig.scholarshipId;
+        info.name = _scholarshipConfig.name;
+        info.description = _scholarshipConfig.description;
+        info.targetStudentGroup = _scholarshipConfig.targetStudentGroup;
+        info.socialImpactOKR = _scholarshipConfig.socialImpactOKR;
+        maxApplicants = _scholarshipConfig.maxApplicants;
+        fundingGoal = _scholarshipConfig.fundingGoal;
+        createExams(_examConfigs);
     }
 
     function createExams(Shared.ExamConfig[] memory _examConfigs) internal {
@@ -92,15 +66,12 @@ contract Scholarship {
         }
     }
 
-    function getExamCount() public view returns (uint256 examCount) {
-        return examList.length;
-    }
-
-    function fundScholarship() public payable {
+    function fundScholarship(uint256 amount) payable public {
+        require(msg.value == amount);
+        require(amount <= (fundingGoal - currentFunding), 'Cannot fund more than remaining amount.');
         require(!isFundingComplete, 'Funding goal has already been reached.');
-        require(msg.value <= (fundingGoal - currentFunding), 'Cannot fund more than remaining amount.');
 
-        currentFunding += msg.value;
+        currentFunding += amount;
         if (!isFunder(msg.sender)) {
             funders[msg.sender] = true;
             numFunders++;
@@ -110,54 +81,48 @@ contract Scholarship {
         }
     }
 
+    function getCurrentFunding() public view returns (uint256) {
+        return address(this).balance;
+    }
+
     function isFunder(address funder) internal view returns (bool) {
         return funders[funder];
     }
 
-    function submitApplicantsForScholarship(address[] memory _applicants) public {
-        for (uint256 index = 0; index < _applicants.length; index++) {
-            applyForScholarship(_applicants[index]);
-        }
-    }
 
     function applyForScholarship(address applicantAddress) public {
         require(!isApplicant(applicantAddress), 'You have already applied for this Scholarship.');
         require(canTakeApplicant(), 'This Scholarship is taking no more applications.');
 
-        applicants[applicantAddress].isApplicant = true;
-        for (uint256 index = 0; index < examList.length; index++) {
-            ExamRecord memory examRecord = ExamRecord(0, false);
-            applicants[applicantAddress].examRecords[examList[index]] = examRecord;
-        }
+        applicants[applicantAddress] = true;
         applicantCount++;
     }
 
-    function getApplicantExamRecord(address applicantAddress, uint256 examId)
-        public
-        view
-        returns (ExamRecord memory record)
-    {
-        return applicants[applicantAddress].examRecords[examId];
-    }
-
     function isApplicant(address applicant) internal view returns (bool) {
-        return applicants[applicant].isApplicant;
+        return applicants[applicant];
     }
 
     function canTakeApplicant() internal view returns (bool) {
         return applicantCount < maxApplicants;
     }
 
-    // Todo - Rework this so can be updated in batch of applicants for an exam
-    function updateApplicantExamRecord(
-        address applicantAddress,
-        uint256 examId,
-        uint256 score
-    ) public {
-        require(score <= exams[examId].totalMarks);
+    function requestSuccessfulApplicant() public {
+        requestExamRecordData(info.scholarshipId);
+    }
 
-        bool isPass = score >= exams[examId].passMarks;
-        ExamRecord memory examRecord = ExamRecord(score, isPass);
-        applicants[applicantAddress].examRecords[examId] = examRecord;
+    function readSuccessfulApplicant() public returns (address) {
+        // Todo refactor this
+        if (address(0) == successfulApplicant) {
+            return successfulApplicant;
+        }
+        canAward = true;
+        return successfulApplicant;
+    }
+
+    // todo make this only owner when working
+    function awardScholarship() public {
+        require(canAward, 'Successful applicant has not been confirmed yet');
+        
+        payable(successfulApplicant).transfer(address(this).balance);
     }
 }
