@@ -12,16 +12,22 @@ const customError = (data) => {
 // with a Boolean value indicating whether or not they
 // should be required.
 const customParams = {
-  examId: ["examId", "exam", "id"],
+  scholarshipId: ["scholarshipId", "scholarship", "id"],
   endpoint: false,
+};
+
+const getSuccessfulApplicant = (applicants) => {
+  return applicants.reduce((prev, curr) =>
+    curr.totalMark > prev.totalMark ? curr : prev
+  );
 };
 
 const createRequest = (input, callback) => {
   // The Validator helps you validate the Chainlink request data
   const validator = new Validator(callback, input, customParams);
   const jobRunID = validator.validated.id;
-  const endpoint = validator.validated.data.endpoint || "exams";
-  const id = validator.validated.data.examId;
+  const endpoint = validator.validated.data.endpoint || "scholarships";
+  const id = validator.validated.data.scholarshipId;
   const url = `http://localhost:3000/${endpoint}/${id}`;
 
   // This is where you would add method and headers
@@ -40,9 +46,13 @@ const createRequest = (input, callback) => {
       // It's common practice to store the desired value at the top-level
       // result key. This allows different adapters to be compatible with
       // one another.
-      response.data.result = Requester.getResult(response.data, [
-        "examRecords",
-      ]);
+
+      const successfulApplicant = getSuccessfulApplicant(
+        response.data.applicants
+      );
+
+      // Set the result to the public address of the applicant with the highest marks
+      response.data.result = successfulApplicant.publicKey;
       callback(response.status, Requester.success(jobRunID, response));
     })
     .catch((error) => {
