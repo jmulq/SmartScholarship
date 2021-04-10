@@ -6,7 +6,7 @@ require("dotenv/config");
 
 // Import routes
 const studentsRoute = require("./routes/students");
-const examsRoute = require("./routes/exams");
+const scholarshipsRoute = require("./routes/scholarships");
 
 // Middlewares
 app.use(cors());
@@ -15,7 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use("/students", studentsRoute);
-app.use("/exams", examsRoute);
+app.use("/scholarships", scholarshipsRoute);
 
 // Connect to DB
 mongoose.connect(
