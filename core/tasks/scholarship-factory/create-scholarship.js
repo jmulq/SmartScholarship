@@ -20,14 +20,14 @@ task("create-scholarship", "Calls the createScholarship function in the Scholars
 
         const scholarshipConfigParam = {
             scholarshipId: 'EMP2072',
-            name: 'Empower Scholarship Scheme - 2021',
-            description: 'Scholarship to encourage completion of lower secondary education  of female students in sub-Saharan Africa',
-            targetStudentGroup: 'Female students in Ethopia',
-            socialImpactOKR: 'Improve lower secondary education completion rate of female students by atleast 10%',
-            maxApplicants: 10,
-            fundingGoal: ethers.BigNumber.from(10).pow(18), // 10 ETH
+            name: 'Global Blockchain Scholarship - 2021',
+            description: 'Scholarship to encourage the next generation of blockchain developers around the globe ',
+            targetStudentGroup: 'Anyone around the globe',
+            socialImpactOKR: '-',
+            maxApplicants: 20,
+            fundingGoal: ethers.BigNumber.from(2).pow(19),
         };
-        
+
         const examConfigsParam = [
             {
                 name: 'English',
@@ -44,7 +44,7 @@ task("create-scholarship", "Calls the createScholarship function in the Scholars
                 totalMarks: 100,
                 passMarks: 50,
             }
-        ]; 
+        ];
 
         var result = await factoryContract.createScholarship(
             scholarshipConfigParam,
