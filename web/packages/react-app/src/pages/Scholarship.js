@@ -3,7 +3,7 @@ import { Body } from "../components";
 import { fundScholarship, awardScholarship, getScholarshipContract, applyForScholarship, requestSuccessfulApplicant } from '../ethereum';
 import { utils, constants } from "ethers";
 import { withRouter } from "react-router-dom";
-import { Box, Modal, ModalContent, ModalOverlay, ModalCloseButton, ModalFooter, ModalHeader, ModalBody, HStack, Button, Divider, Flex, Text, useColorModeValue as mode, NumberInput, NumberIn, NumberInputField } from '@chakra-ui/react'
+import { Box, Modal, ModalContent, Progress, ModalOverlay, ModalCloseButton, ModalFooter, ModalHeader, ModalBody, HStack, Button, Divider, Flex, Text, useColorModeValue as mode, NumberInput, NumberIn, NumberInputField } from '@chakra-ui/react'
 import { Description } from '../components/Description';
 
 const Scholarship = (props) => {
@@ -53,6 +53,11 @@ const Scholarship = (props) => {
         await awardScholarship();
     }
 
+    const renderFundingProgress = () => {
+        const progressValue = (+toEth(currentFunding) / +toEth(fundingGoal)) * 100;
+        return <Progress borderRadius="2xl" marginBottom="5px" colorScheme="green" height="32px" value={progressValue} />
+    }
+
     const renderModal = () => (
         <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
             <ModalOverlay />
@@ -84,6 +89,7 @@ const Scholarship = (props) => {
             <Body>
                 <Box w="100%" h="100vh" bgGradient="linear(to-r,blue.200, blue.100)" display="flex" flexDirection="column" alignItems="center">
                     <Box marginBottom="100px" marginTop="150px" maxW={{ base: 'xl', md: '7xl' }} mx="auto" px={{ md: '8' }}>
+                        {renderFundingProgress()}
                         <Box
                             maxW="3xl"
                             mx="auto"
@@ -106,6 +112,7 @@ const Scholarship = (props) => {
                                 <Description title="Social impact OKR" value={socialImpactOKR} />
                                 <Description title="Max applicants" value={toString(maxApplicants)} />
                                 <Description title="Funding goal" value={`${toEth(fundingGoal)} ETH`} />
+                                <Description title="Funding remaining" value={`${+toEth(fundingGoal) - +toEth(currentFunding)} ETH`} />
                             </Box>
                         </Box>
                     </Box>
