@@ -11,9 +11,10 @@ const Scholarship = (props) => {
     const [contract, setContract] = useState(null);
     const [canAwardApplicant, setCanAwardApplicant] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const { scholarshipAddress, scholarshipDetails } = props.location.state;
-    const { info, maxApplicants, applicantCount, canAward, fundingGoal, currentFunding, isFundingComplete } = scholarshipDetails;
+    const { info, maxApplicants, fundingGoal, currentFunding, isFundingComplete } = scholarshipDetails;
     const { scholarshipId, name, description, targetStudentGroup, socialImpactOKR } = info;
 
     const toString = (value) => {
@@ -38,7 +39,7 @@ const Scholarship = (props) => {
     }
 
     const handleEvaluate = async () => {
-        const res = await requestSuccessfulApplicant(contract);
+        const res = await requestSuccessfulApplicant(contract, scholarshipId);
 
         console.log('res', res);
         if (res == constants.AddressZero) {
@@ -50,7 +51,8 @@ const Scholarship = (props) => {
     }
 
     const handleAward = async () => {
-        await awardScholarship();
+        setShowSuccessModal(true);
+        await awardScholarship(contract);
     }
 
     const renderFundingProgress = () => {
@@ -69,6 +71,24 @@ const Scholarship = (props) => {
                 </ModalBody>
                 <ModalFooter>
                     <Button colorScheme="blue" mr={3} onClick={() => setShowModal(false)}>
+                        Close
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+    )
+
+    const renderSuccessModal = () => (
+        <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)}>
+            <ModalOverlay />
+            <ModalContent>
+                <ModalHeader>Scholarship awarded</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                    <Text>Balance of {toEth(currentFunding)}ETH was awarded to the successful applicant.</Text>
+                </ModalBody>
+                <ModalFooter>
+                    <Button colorScheme="blue" mr={3} onClick={() => setShowSuccessModal(false)}>
                         Close
                     </Button>
                 </ModalFooter>
@@ -126,9 +146,10 @@ const Scholarship = (props) => {
                     <HStack borderRadius="2xl" width="20%" justifyContent="center" bgColor="white" spacing="5px" marginTop="-60px">
                         <Button marginTop="20px" marginBottom="20px" bgColor="blue.200" onClick={handleApply}>Apply</Button>
                         <Button marginTop="20px" marginBottom="20px" bgColor="green.200" onClick={handleEvaluate}>Evaluate</Button>
-                        <Button marginTop="20px" marginBottom="20px" bgColor="blue.200" disabled={!canAwardApplicant} onClick={handleAward}>Award</Button>
+                        <Button marginTop="20px" marginBottom="20px" bgColor="blue.200" onClick={handleAward}>Award</Button>
                     </HStack>
                     {setShowModal && renderModal()}
+                    {setShowSuccessModal && renderSuccessModal()}
                 </Box>
             </Body>
 

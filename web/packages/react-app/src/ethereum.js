@@ -81,9 +81,9 @@ const applyForScholarship = async (scholarshipContract) => {
     await scholarshipContract.applyForScholarship();
 }
 
-const requestSuccessfulApplicant = async (scholarshipContract) => {
+const requestSuccessfulApplicant = async (scholarshipContract, scholarshipId) => {
     await window.ethereum.enable();
-    await scholarshipContract.requestExamRecordData();
+    await scholarshipContract.requestExamRecordData(scholarshipId);
     const successfulApplicant = await scholarshipContract.readSuccessfulApplicant();
     return successfulApplicant;
 }

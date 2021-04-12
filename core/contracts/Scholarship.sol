@@ -81,7 +81,7 @@ contract Scholarship is APIConsumer {
         if (currentFunding == fundingGoal) {
             isFundingComplete = true;
         }
-        emit ScholarshipFunded(adress(this), info.name);
+        emit ScholarshipFunded(address(this), info.name);
     }
 
     function getCurrentFunding() public view returns (uint256) {
