@@ -38,6 +38,8 @@ contract Scholarship is APIConsumer {
     mapping(uint256 => Exam) public exams;
     uint256[] public examList;
 
+    event ScholarshipFunded(address scholarshipAddress, string name);
+
     constructor(
         address _admin,
         Shared.ScholarshipConfig memory _scholarshipConfig,
@@ -79,6 +81,7 @@ contract Scholarship is APIConsumer {
         if (currentFunding == fundingGoal) {
             isFundingComplete = true;
         }
+        emit ScholarshipFunded(adress(this), info.name);
     }
 
     function getCurrentFunding() public view returns (uint256) {
@@ -90,11 +93,11 @@ contract Scholarship is APIConsumer {
     }
 
 
-    function applyForScholarship(address applicantAddress) public {
-        require(!isApplicant(applicantAddress), 'You have already applied for this Scholarship.');
+    function applyForScholarship() public {
+        require(!isApplicant(msg.sender), 'You have already applied for this Scholarship.');
         require(canTakeApplicant(), 'This Scholarship is taking no more applications.');
 
-        applicants[applicantAddress] = true;
+        applicants[msg.sender] = true;
         applicantCount++;
     }
 

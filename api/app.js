@@ -8,6 +8,8 @@ require("dotenv/config");
 const studentsRoute = require("./routes/students");
 const scholarshipsRoute = require("./routes/scholarships");
 
+app.set('port', process.env.PORT || 4000);
+
 // Middlewares
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
@@ -24,4 +26,4 @@ mongoose.connect(
   () => console.log("Connected to db")
 );
 
-app.listen(3000);
+app.listen(4000);
