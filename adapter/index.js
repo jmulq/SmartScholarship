@@ -43,7 +43,7 @@ const createRequest = (input, callback) => {
 
   switch (action) {
     case 'createScholarship':
-      url = `http://localhost:3000/${endpoint}/`
+      url = `http://localhost:4000/${endpoint}/` // Todo move this to env file
       config = {
         url,
         method: 'post',
@@ -54,7 +54,7 @@ const createRequest = (input, callback) => {
       }
       break
     case 'getScholar':
-      url = `http://localhost:3000/${endpoint}/${validator.validated.data.scholarshipId}`
+      url = `http://localhost:4000/${endpoint}/${validator.validated.data.scholarshipId}`
       config = {
         url
       }
